@@ -81,15 +81,15 @@ def extract_certs(tls_layer):
         field = field_container.main_field
         # controllo il nome del campo
         if field.name == 'x509if.RelativeDistinguishedName_item_element':
-            rdn = (TLSCert.get_all(field_container))
+            rdn = (get_all(field_container))
         elif field.name == 'x509af.signedCertificate_element':
             cert_count = len(field_container.all_fields)
         elif field.name == 'x509if.rdnSequence':
-            if_rdnSequence_count = (TLSCert.get_all(field_container))
+            if_rdnSequence_count = (get_all(field_container))
         elif field.name == 'x509af.utcTime':
-            times = TLSCert.get_all(field_container)
+            times = get_all(field_container)
         elif field.name == 'x509af.rdnSequence':
-            af_rdnSequence_count = TLSCert.get_all(field_container)
+            af_rdnSequence_count = get_all(field_container)
     certs = []
     for x in range(cert_count):
         cert = TLSCert()
@@ -109,7 +109,7 @@ def analyzePacket(packet):
     layer: Layer
     layer = packet.tls
     field: LayerFieldsContainer
-    for cert in TLSCert.extract_certs(layer):
+    for cert in extract_certs(layer):
         if not cert.isValid():
             print(packet.ip.src, packet.tcp.get_field_by_showname("Source Port"), 'Not Valid cert:\n', cert)
         if cert.isSelfSigned():
@@ -142,6 +142,6 @@ if __name__ == "__main__":
             analyzePacket(packet)
 
     else:
-        capture = pyshark.FileCapture(file_path)
+        capture = pyshark.FileCapture(input_file=file_path, display_filter='tls.handshake.certificate')
         for packet in capture:
             analyzePacket(packet)
