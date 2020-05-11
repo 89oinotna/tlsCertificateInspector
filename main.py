@@ -85,7 +85,7 @@ def extract_certs(tls_layer):
         elif field.name == 'x509af.signedCertificate_element':
             cert_count = len(field_container.all_fields)
         elif field.name == 'x509if.rdnSequence':
-            if_rdnSequence_count = (get_all(field_container))
+            if_rdnSequence_count = get_all(field_container)
         elif field.name == 'x509af.utcTime':
             times = get_all(field_container)
         elif field.name == 'x509af.rdnSequence':
