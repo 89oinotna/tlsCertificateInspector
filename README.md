@@ -34,7 +34,7 @@ _**Root privileges are required based on your tshark configuration.**_
                
 ``` 
 
-Arguments:
+### Arguments:
 Flag | Store | Description
 ------------ | ------------- | -------------
  -h, --help | |  show this help message and exit
@@ -44,3 +44,28 @@ Flag | Store | Description
  -mp | MAX_PACKET | Maximum packet i want to read (Default 0 means unlimited)
  -fi | INPUT_FILE | File that i want to read
  -fo | OUTPUT_FILE | Log file where to store the results
+ 
+ ### Output Forrmat
+  ``` 
+ {IP.SRC}:{SRC.PORT} {WHY IT'S FLAGGED} Certificate (Chain position {POS}/{CHAIN LEN}):
+        Issuer: DN of the issuer
+        Subject: DN of the subject
+        Not Before: datetime
+        Not After: datetime
+  ```            
+            
+ ## Example
+ Capturing from live interface
+ ### Command
+ ``` 
+ sudo python3 main.py -l -i enp0s31f6
+``` 
+### Output
+``` 
+Listening on: enp0s31f6
+131.114.186.12:443 Self-Signed Certificate (Chain position 2/3):
+        Issuer: ['RelativeDistinguishedName item (id-at-countryName=US)', 'RelativeDistinguishedName item (id-at-organizationName=DigiCert Inc)', 'RelativeDistinguishedName item (id-at-organizationalUnitName=www.digicert.com)', 'RelativeDistinguishedName item (id-at-commonName=DigiCert Assured ID Root CA)']
+        Subject: ['RelativeDistinguishedName item (id-at-countryName=US)', 'RelativeDistinguishedName item (id-at-organizationName=DigiCert Inc)', 'RelativeDistinguishedName item (id-at-organizationalUnitName=www.digicert.com)', 'RelativeDistinguishedName item (id-at-commonName=DigiCert Assured ID Root CA)']
+        Not Before: 2006-11-10 00:00:00
+        Not After: 2031-11-10 00:00:00
+``` 
