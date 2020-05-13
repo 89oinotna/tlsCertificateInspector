@@ -45,7 +45,7 @@ Flag | Store | Description
  -fi | INPUT_FILE | File that i want to read
  -fo | OUTPUT_FILE | Log file where to store the results
  
- ### Output Forrmat
+ ### Output Format
   ``` 
  {IP.SRC}:{SRC.PORT} {WHY IT'S FLAGGED} Certificate (Chain position {POS}/{CHAIN LEN}):
         Issuer: DN of the issuer
@@ -56,11 +56,11 @@ Flag | Store | Description
             
  ## Example
  Capturing from live interface
- ### Command
+ #### Command
  ``` 
  sudo python3 main.py -l -i enp0s31f6
 ``` 
-### Output
+#### Output
 ``` 
 Listening on: enp0s31f6
 131.114.186.12:443 Self-Signed Certificate (Chain position 2/3):
