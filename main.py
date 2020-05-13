@@ -4,27 +4,34 @@ from pyshark.packet.layer import Layer
 from pyshark.packet.packet import Packet
 from datetime import datetime
 import sys
+import argparse
 
-interface = 'eth0'  # interfaccia di rete
-timeout = 0  # timeout per il live sniff
-live = True
-packet_count = 0  # numero pacchetti da ispezionare
-file_path = ''  # percorso file pcap
+parser = argparse.ArgumentParser(description='TLS certificate inspector to detect if it is invalid/self-signed')
+parser.add_argument('-i', dest="interface", default='eth0', help="Interface from which to capture (Default eth0)")
+parser.add_argument('-l', dest="live", action="store_true", default=False, help="Enables live capture")
+parser.add_argument('-t', dest="timeout", help="Specify live sniff timeout in seconds (Default 0 means unlimited)",
+                    type=int, default=0)
+parser.add_argument('-mp', dest="max_packet", help="Maximum packet i want to read (Default 0 means unlimited)",
+                    type=int, default=0)
+parser.add_argument('-fi', dest="input_file", help="File that i want to read")
+parser.add_argument('-fo', dest="output_file", help="Log file where to store the results")
+fo = None
+fi = None
 
 
+# TODO chain
 class TLSCert:
-    def __init__(self):
+    def __init__(self, x):
         self.not_before = None
         self.not_after = None
         self.issuer = []
         self.subject = []
+        self.num = x
 
     def add_issuer_sequence(self, seq):
-        # field = [oid, seq]
         self.issuer.append(seq)
 
     def add_subject_sequence(self, seq):
-        # field = [oid, seq]
         self.subject.append(seq)
 
     def add_not_before(self, time):
@@ -92,7 +99,7 @@ def extract_certs(tls_layer):
             af_rdnSequence_count = get_all(field_container)
     certs = []
     for x in range(cert_count):
-        cert = TLSCert()
+        cert = TLSCert(x)
         for y in range(int(if_rdnSequence_count[x])):
             cert.add_issuer_sequence(rdn.pop(0))
         for y in range(int(af_rdnSequence_count[x])):
@@ -109,39 +116,48 @@ def analyzePacket(packet):
     layer: Layer
     layer = packet.tls
     field: LayerFieldsContainer
-    for cert in extract_certs(layer):
-        if not cert.isValid():
-            print(packet.ip.src, packet.tcp.get_field_by_showname("Source Port"), 'Not Valid cert:\n', cert)
-        if cert.isSelfSigned():
-            print(packet.ip.src, packet.tcp.get_field_by_showname("Source Port"), 'Self Signed Cert:\n', cert)
+    cert_list = extract_certs(layer)
+    for cert in cert_list:
+        out = "{}:{} {} Certificate (Chain position {}/{}):\n {}\n"
+        found = False
+        if not cert.isValid() and cert.isSelfSigned():
+            out = out.format(packet.ip.src, packet.tcp.get_field_by_showname("Source Port"),
+                             'Not Valid and Self-Signed', cert.num, len(cert_list), cert)
+            found = True
+            print(out)
+        elif not cert.isValid():
+            out = out.format(packet.ip.src, packet.tcp.get_field_by_showname("Source Port"), 'Not Valid', cert.num,
+                             len(cert_list), cert)
+            found = True
+            print(out)
+        elif cert.isSelfSigned():
+            out = out.format(packet.ip.src, packet.tcp.get_field_by_showname("Source Port"), 'Self-Signed', cert.num,
+                             len(cert_list), cert)
+            found = True
+            print(out)
+        if fo is not None and found:
+            fo.write(out)
 
+
+results = parser.parse_args()
 
 if __name__ == "__main__":
-    x = 1
-    while x < len(sys.argv):
-        arg = sys.argv[x]
-        x += 1
-        if arg == '-f':
-            live = False
-            file_path = sys.argv[x]
-        elif arg == '-t':
-            timeout = int(sys.argv[x])
-        elif arg == '-pc':
-            packet_count = int(sys.argv[x])
-        elif arg == '-i':
-            interface = sys.argv[x]
-        else:
-            raise Exception('Wrong argument format')
-        x += 1
-
-    if live:
-        capture = pyshark.LiveCapture(interface=interface, display_filter='tls.handshake.certificate')
-        capture.sniff(timeout=timeout)
+    if results.output_file is not None:
+        fo = open(results.output_file, "w")
+    if results.live:
+        capture = pyshark.LiveCapture(interface=results.interface, display_filter='tls.handshake.certificate')
+        capture.sniff(timeout=results.timeout)
         packet: Packet
-        for packet in capture.sniff_continuously(packet_count):
-            analyzePacket(packet)
+        print('Listening on:', results.interface)
+        capture.apply_on_packets(analyzePacket, packet_count=results.max_packet)
+        # for packet in capture.sniff_continuously():
+        #   analyzePacket(packet)
 
     else:
-        capture = pyshark.FileCapture(input_file=file_path, display_filter='tls.handshake.certificate')
-        for packet in capture:
-            analyzePacket(packet)
+        capture = pyshark.FileCapture(input_file=results.input_file, display_filter='tls.handshake.certificate')
+        capture.apply_on_packets(analyzePacket, packet_count=results.max_packet)
+        # for packet in capture:
+        #   analyzePacket(packet)
+
+    if fo is not None:
+        fo.close()
