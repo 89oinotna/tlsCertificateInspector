@@ -135,15 +135,15 @@ def analyzePacket(packet):
                              len(cert_list), cert)
             found = True
             print(out)
-        if fo is not None and found:
+        if results.output_file is not None and found:
+            fo = open(results.output_file, "a")
             fo.write(out)
+            fo.close()
 
 
 results = parser.parse_args()
 
 if __name__ == "__main__":
-    if results.output_file is not None:
-        fo = open(results.output_file, "w")
     if results.live:
         capture = pyshark.LiveCapture(interface=results.interface, display_filter='tls.handshake.certificate')
         capture.sniff(timeout=results.timeout)
