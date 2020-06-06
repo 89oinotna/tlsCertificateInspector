@@ -15,7 +15,7 @@ parser.add_argument('-mp', dest="max_packet", help="Maximum packet i want to rea
                     type=int, default=0)
 parser.add_argument('-fi', dest="input_file", help="File that i want to read (Es. test.pcap)")
 parser.add_argument('-fo', dest="output_file", help="Name for the log file where to store the results")
-parser.add_argument('-v', dest="verbose", help="Verbose mode", default=False, action="store_true")
+parser.add_argument('-v', dest="verbose", help="Enable verbose mode", default=False, action="store_true")
 fo = None
 fi = None
 p_count_total = 0
